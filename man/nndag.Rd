@@ -36,8 +36,10 @@ Using a list of formulas as input, \code{dagnn} generates an \code{\link[=nn_mod
 neural network with a compact syntax
 }
 \examples{
-nndag(i_1 = ~ 19,
-      c = ~ 1,
-      p_1 = i_1 + c ~ 11,
-      `e_[.]` = p_1 + c ~ c(32, 16, 8))
+dag <- nndag(i_1 = ~ 19,
+             c = ~ 1,
+             p_1 = i_1 + c ~ 11,
+            `e_[.]` = p_1 + c ~ c(32, 16, 8))
+print(dag)
+print(dag$layers)
 }

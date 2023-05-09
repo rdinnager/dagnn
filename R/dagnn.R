@@ -192,10 +192,12 @@ make_forward <- function(names, inputs, ops, this_nn) {
 #' @importFrom zeallot %<-%
 #'
 #' @examples
-#' nndag(i_1 = ~ 19,
-#'       c = ~ 1,
-#'       p_1 = i_1 + c ~ 11,
-#'       `e_[.]` = p_1 + c ~ c(32, 16, 8))
+#' dag <- nndag(i_1 = ~ 19,
+#'              c = ~ 1,
+#'              p_1 = i_1 + c ~ 11,
+#'             `e_[.]` = p_1 + c ~ c(32, 16, 8))
+#' print(dag)
+#' print(dag$layers)
 nndag <- function(..., .fns = list(torch::nn_linear),
                   .args = list(),
                   .act = list(torch::nn_relu)) {
@@ -217,14 +219,21 @@ nndag <- function(..., .fns = list(torch::nn_linear),
   dag_ig <- make_graph(inputs, names)
   dag_sorted <- names(igraph::topo_sort(dag_ig))
   
+  names <- dag_sorted
+  inputs <- inputs[names]
+  output_dims <- output_dims[names]
+  ops <- ops[names]
+  
   nn_make <- make_forward(names, inputs, ops, this_nn)
   
-  this_nn <- nn_make(dag_sorted, output_dims, ops, inputs, .fns, .args, .act)
+  this_nn <- nn_make(names, output_dims, ops, inputs, .fns, .args, .act)
   
   attr(this_nn, "dag") <- dag_ig
   attr(this_nn, "nn_module") <- nn_make
   
   class(this_nn) <- c("dagnn", class(this_nn))
+  
+  this_nn
 
   # list(inputs, ops, output_dims, names, dag_ig, this_nn, nn_make)
 }

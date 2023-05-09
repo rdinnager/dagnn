@@ -20,3 +20,6 @@ Imports:
     torch,
     zeallot
 URL: https://rdinnager.github.io/dagnn/
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
