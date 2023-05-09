@@ -1,2 +1,10 @@
 ^dagnn\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^data-raw$
+^logo$
+^LICENSE\.md$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
