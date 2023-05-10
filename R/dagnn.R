@@ -139,7 +139,7 @@ general_nn <- torch::nn_module("GeneralNN",
                               })
 
 #' @importFrom stats setNames
-make_forward <- function(names, inputs, ops, this_nn) {
+make_forward <- function(names, inputs, ops, this_nn, terminal) {
   input_names <- names[purrr::map_lgl(inputs,
                                       ~ length(.x) > 0)]
   
@@ -151,7 +151,11 @@ make_forward <- function(names, inputs, ops, this_nn) {
                          rlang::expr(x <- self$layers[[!!..3]](x)),
                          rlang::expr(!!rlang::sym(..2) <- self$activations[[!!..3]](x))))
   
-  calls <- c(calls, rlang::expr(!!rlang::sym(input_names[length(input_names)])))
+  if(length(terminal) > 1) {
+    calls <- c(calls, rlang::expr(!!rlang::call2(rlang::expr(list), !!!rlang::syms(terminal))))
+  } else {
+    calls <- c(calls, rlang::expr(!!rlang::sym(terminal)))
+  }
   
   bod <- rlang::expr({!!!purrr::list_flatten(calls)})
   
@@ -218,13 +222,15 @@ nndag <- function(..., .fns = list(torch::nn_linear),
   
   dag_ig <- make_graph(inputs, names)
   dag_sorted <- names(igraph::topo_sort(dag_ig))
+  dag_deg <- igraph::degree(dag_ig, mode = "out")
+  terminal <- names(dag_deg)[dag_deg == 0]
   
   names <- dag_sorted
   inputs <- inputs[names]
   output_dims <- output_dims[names]
   ops <- ops[names]
   
-  nn_make <- make_forward(names, inputs, ops, this_nn)
+  nn_make <- make_forward(names, inputs, ops, this_nn, terminal)
   
   this_nn <- nn_make(names, output_dims, ops, inputs, .fns, .args, .act)
   
