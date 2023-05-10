@@ -152,6 +152,7 @@ make_forward <- function(names, inputs, ops, this_nn, terminal) {
                          rlang::expr(!!rlang::sym(..2) <- self$activations[[!!..3]](x))))
   
   if(length(terminal) > 1) {
+    names(terminal) <- terminal
     calls <- c(calls, rlang::expr(!!rlang::call2(rlang::expr(list), !!!rlang::syms(terminal))))
   } else {
     calls <- c(calls, rlang::expr(!!rlang::sym(terminal)))
