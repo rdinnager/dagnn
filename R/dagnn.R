@@ -10,8 +10,8 @@ make_graph <- function(inputs, names) {
 
 expand_dots <- function(inputs, output_dims, names, ops) {
   
-  output_dims <- output_dims <- purrr::map(output_dims,
-                                           eval)
+  output_dims <- purrr::map(output_dims,
+                            eval)
   dd <- stringr::str_detect(names, stringr::fixed("[.]"))
   
   if(any(dd)) {
@@ -38,10 +38,6 @@ expand_dots <- function(inputs, output_dims, names, ops) {
 
     output_dims <- output_dims %>%
       purrr::flatten()
-    # output_dims[dd] <- purrr::map2(output_dims[dd], lens,
-    #                                ~ rep(.x, .y))
-    # output_dims <- output_dims %>%
-    #   purrr::flatten()
 
     inputs[dd] <- purrr::map2(inputs[dd], lens,
                                   ~ rep(list(.x), .y))
@@ -58,8 +54,9 @@ expand_dots <- function(inputs, output_dims, names, ops) {
     ops <- ops %>%
       purrr::flatten()
 
-    list(names, inputs, output_dims, ops)
   }
+  
+  list(names, inputs, output_dims, ops)
 
 }
 
@@ -76,7 +73,7 @@ get_inputs <- function(inputs) {
   inps <- purrr::map(inputs,
                      all.vars)
   ops <- purrr::map_if(inputs,
-                       ~ !is.null(.x),
+                       ~ !is.null(.x) & !rlang::is_symbol(.x),
                        rlang::call_name,
                        .else = NULL)
   ops[sapply(ops, is.null)] <- "" 
@@ -95,10 +92,23 @@ general_nn <- torch::nn_module("GeneralNN",
                                   input_dims <- purrr::map(input_dims,
                                                            ~ sum(unlist(.x)))
                                   
-                                  default_fn <- fns[[is.null(names(fns))]]
-                                  default_act <- act[[is.null(names(act))]]
+                                  if(is.null(names(fns))) {
+                                    default_fn <- fns[[1]]
+                                  } else {
+                                    default_fn <- fns[[which(names(fns) == "")]] 
+                                  }
+                                  if(is.null(names(act))) {
+                                    default_act <- act[[1]]
+                                  } else {
+                                    default_act <- act[[which(names(act) == "")]] 
+                                  }
+                                  
                                   if(length(args) > 0) {
-                                    default_args <- args[[is.null(names(args))]]
+                                    if(is.null(names(args))) {
+                                      default_args <- args[[1]]
+                                    } else {
+                                      default_args <- args[[which(names(args) == "")]] 
+                                    }
                                   } else {
                                     default_args <- args
                                   }
@@ -209,9 +219,12 @@ nndag <- function(..., .fns = list(torch::nn_linear),
   dots <- rlang::enquos(...)
   not_forms <- !purrr::map_lgl(dots, rlang::quo_is_call)
   rlang::env_bind(rlang::current_env(), !!!dots[not_forms])
+  envs <-  purrr::map(dots[!not_forms], rlang::f_env)
   forms <- purrr::map(dots[!not_forms], rlang::quo_squash)
   inputs <- purrr::map(forms, rlang::f_lhs)
   output_dims <- purrr::map(forms, rlang::f_rhs)
+  output_dims <- purrr::map2(output_dims, envs,
+                             ~ eval(.x, .y))
   names <- names(forms)
 
   c(inputs, ops) %<-% get_inputs(inputs)

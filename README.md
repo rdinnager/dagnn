@@ -29,6 +29,9 @@ devtools::install_github("rdinnager/dagnn")
 
 Coming soon…
 
+An *in-the-wild* example of using `dagnn` can be found here:
+<https://github.com/rdinnager/bioclim_intrinsic_dimension>
+
 ### About the logo
 
 Logo generated using Stable Diffusion SDXL with editing by Russell
